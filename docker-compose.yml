@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  mongo:
+    image: mongo:7.0
+    container_name: mongodb
+    ports:
+      - '27017:27017'
+    command: ["--replSet", "rs0", "--bind_ip_all", "--port", "27017"]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: echo "try { rs.status() } catch (err) { rs.initiate({_id:'rs0',members:[{_id:0,host:'host.docker.internal:27017'}]}) }" | mongosh --port 27017 --quiet
+      interval: 5s
+      timeout: 30s
+      start_period: 0s
+      retries: 30
+    volumes:
+      - mongodb:/data/db
+      - mongodb_config:/data/configdb
+    networks:
+      - evento
+    
+  # evento-backend:
+  #   build: .
+  #   container_name: evento-backend
+  #   volumes:
+  #     - ./evento-backend:/app
+  #   command: pnpm dev
+  #   ports:
+  #     - '5050:5050'
+  #   depends_on:
+  #     - mongo
+  #   networks:
+  #     - evento
+    
+networks:
+  evento:
+    driver: bridge
+
+volumes:
+    mongodb:
+    mongodb_config:
+
